@@ -22,9 +22,9 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({
         palette: {
           mode,
           primary: {
-            main: mode === "light" ? "#1976d2" : "#90caf9",
-            light: mode === "light" ? "#42a5f5" : "#bbdefb",
-            dark: mode === "light" ? "#1565c0" : "#5c6bc0",
+            main: mode === "light" ? "#5F2A60" : "#B366B8",
+            light: mode === "light" ? "#7A3A7B" : "#D680DD",
+            dark: mode === "light" ? "#4A1A4B" : "#8B4A8C",
           },
           secondary: {
             main: mode === "light" ? "#dc004e" : "#f48fb1",

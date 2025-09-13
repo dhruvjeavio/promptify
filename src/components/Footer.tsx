@@ -23,10 +23,11 @@ const Footer: React.FC = () => {
           gap={2}
         >
           <Typography variant="body2" color="text.secondary">
-            © 2024 Promptify. Built for collaborative AI prompt development.
+            © {new Date().getFullYear()} Promptify. Built for collaborative AI
+            prompt development.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Made with ❤️ for hackathons
+            {/* Made with ❤️ for hackathons */}
           </Typography>
         </Box>
       </Container>

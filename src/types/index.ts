@@ -11,6 +11,7 @@ export interface Prompt {
   isPublic: boolean;
   createdAt?: string;
   updatedAt?: string;
+  username?: string;
 }
 
 export interface CreatePromptRequest {
@@ -28,14 +29,12 @@ export interface UpdatePromptRequest extends Partial<CreatePromptRequest> {
 
 export interface PromptFormData {
   goal: string;
-  targetAudience: string;
+  targetAudience?: string;
   context: string;
   outputFormat: string;
-  temperature: number;
-  tone: string;
-  maxLength: number;
   creativity: string;
   specificity: string;
+  role: string;
 }
 
 export interface PromptScore {
@@ -53,17 +52,44 @@ export interface PromptRefinement {
   improvements: string[];
 }
 
+export interface PromptAnalysisHistory {
+  id: number;
+  prompt_id: number;
+  generated_text: string;
+  created_at: string;
+  analysis: {
+    additional_suggestions: string[];
+    clarity: number;
+    effectiveness: number;
+    improvements_made: string[];
+    overall_score: number;
+    refined_prompt: string;
+    specificity: number;
+  };
+  usage_metadata: {
+    candidates_token_count: number;
+    prompt_token_count: number;
+  };
+}
+
 export interface User {
   id: string;
-  name: string;
-  email: string;
-  role: string;
+  username: string;
+  token: string;
+  role?: string;
 }
 
 export interface LoginFormData {
-  email: string;
-  name: string;
-  role: string;
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+}
+
+export interface LogoutResponse {
+  message: string;
 }
 
 export interface ApiResponse<T> {

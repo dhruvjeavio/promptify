@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Box, Typography, Container, Alert, Tabs, Tab } from "@mui/material";
+import { Box, Typography, Container, Tabs, Tab } from "@mui/material";
 import { useCreatePromptMutation } from "../services/apiSlice";
 import { useNavigate } from "react-router-dom";
 import GuidedBuilderForm from "../components/GuidedBuilderForm";
-import SharingPromptTemplates from "../components/SharingPromptTemplates";
+import { EnhancedAlert } from "../components";
 import type { PromptFormData } from "../types/index";
 
 const PromptBuilderPage: React.FC = () => {
@@ -23,9 +23,9 @@ const PromptBuilderPage: React.FC = () => {
         title: submitData.goal.substring(0, 100), // Use first 100 chars of goal as title
         promptText,
         intendedUse: submitData.goal,
-        targetAudience: submitData.targetAudience,
+        targetAudience: submitData.targetAudience || "",
         tags: submitData.tags,
-        isPublic: true, // For now, all prompts are public
+        isPublic: false, // All prompts are private by default
       };
 
       const result = await createPrompt(newPrompt).unwrap();
@@ -35,17 +35,12 @@ const PromptBuilderPage: React.FC = () => {
     }
   };
 
-  const handleTemplateSelect = (templateData: PromptFormData) => {
-    setFormData(templateData);
-    setActiveTab(1); // Switch to the form tab
-  };
-
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
   const generatePromptText = (formData: PromptFormData): string => {
-    const { goal, targetAudience, context, outputFormat } = formData;
+    const { goal, targetAudience, context } = formData;
 
     // Check if this is a sharing-related prompt
     const isSharingPrompt =
@@ -60,20 +55,22 @@ const PromptBuilderPage: React.FC = () => {
 
     let promptText = `You are a helpful AI assistant. Your task is to help with the following:\n\n`;
     promptText += `**Goal:** ${goal}\n\n`;
-    promptText += `**Target Audience:** ${targetAudience}\n\n`;
+
+    if (targetAudience) {
+      promptText += `**Target Audience:** ${targetAudience}\n\n`;
+    }
 
     if (context) {
       promptText += `**Context:** ${context}\n\n`;
     }
 
-    promptText += `**Output Format:** Please provide your response in ${outputFormat.toLowerCase()} format.\n\n`;
-    promptText += `Please provide a comprehensive and helpful response that addresses the goal while being appropriate for the target audience.`;
+    promptText += `Please provide a comprehensive and helpful response that addresses the goal${targetAudience ? " while being appropriate for the target audience" : ""}.`;
 
     return promptText;
   };
 
   const generateSharingPromptText = (formData: PromptFormData): string => {
-    const { goal, targetAudience, context, outputFormat } = formData;
+    const { goal, targetAudience, context } = formData;
 
     let promptText = `You are a social media and content sharing expert. Your task is to help create compelling content for sharing public links and promoting content.\n\n`;
     promptText += `**Goal:** ${goal}\n\n`;
@@ -83,14 +80,12 @@ const PromptBuilderPage: React.FC = () => {
       promptText += `**Context:** ${context}\n\n`;
     }
 
-    promptText += `**Output Format:** Please provide your response in ${outputFormat.toLowerCase()} format.\n\n`;
     promptText += `**Instructions:**\n`;
     promptText += `- Create engaging, shareable content that encourages clicks and engagement\n`;
     promptText += `- Include relevant hashtags and mentions where appropriate\n`;
     promptText += `- Consider the platform-specific best practices for the target audience\n`;
     promptText += `- Make the content authentic and valuable to the audience\n`;
-    promptText += `- Include a clear call-to-action when appropriate\n`;
-    promptText += `- Ensure the content is optimized for the specified output format\n\n`;
+    promptText += `- Include a clear call-to-action when appropriate\n\n`;
     promptText += `Please provide a comprehensive and engaging response that will help maximize the reach and impact of the shared content.`;
 
     return promptText;
@@ -114,23 +109,18 @@ const PromptBuilderPage: React.FC = () => {
         </Box>
 
         {error ? (
-          <Alert severity="error" sx={{ mb: 4 }}>
+          <EnhancedAlert severity="error" sx={{ mb: 4 }}>
             Failed to create prompt. Please try again.
-          </Alert>
+          </EnhancedAlert>
         ) : null}
 
         <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 4 }}>
           <Tabs value={activeTab} onChange={handleTabChange} centered>
-            <Tab label="Sharing Templates" />
             <Tab label="Custom Prompt" />
           </Tabs>
         </Box>
 
         {activeTab === 0 && (
-          <SharingPromptTemplates onSelectTemplate={handleTemplateSelect} />
-        )}
-
-        {activeTab === 1 && (
           <GuidedBuilderForm
             onSubmit={handleSubmit}
             loading={isLoading}

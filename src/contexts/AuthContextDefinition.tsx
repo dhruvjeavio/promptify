@@ -5,6 +5,7 @@ export interface AuthContextType {
   user: User | null;
   login: (userData: LoginFormData) => void;
   logout: () => void;
+  updateUserRole: (role: string) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

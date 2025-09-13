@@ -18,17 +18,22 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { Prompt } from "../types/index";
+import EditableTitle from "./EditableTitle";
 
 interface PromptCardProps {
   prompt: Prompt;
   onUpvote?: (promptId: string) => void;
+  onTitleUpdate?: (promptId: string, newTitle: string) => Promise<void>;
   showUpvote?: boolean;
+  allowTitleEdit?: boolean;
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({
   prompt,
   onUpvote,
+  onTitleUpdate,
   showUpvote = true,
+  allowTitleEdit = false,
 }) => {
   const navigate = useNavigate();
 
@@ -39,6 +44,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const handleUpvote = (e: React.MouseEvent) => {
     e.stopPropagation();
     onUpvote?.(prompt.id);
+  };
+
+  const handleTitleUpdate = async (newTitle: string) => {
+    if (onTitleUpdate) {
+      await onTitleUpdate(prompt.id, newTitle);
+    }
   };
 
   return (
@@ -60,10 +71,11 @@ const PromptCard: React.FC<PromptCardProps> = ({
       }}
     >
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
-        <Typography
+        <EditableTitle
+          title={prompt.title}
+          onSave={handleTitleUpdate}
           variant="h6"
-          component="h2"
-          gutterBottom
+          disabled={!allowTitleEdit}
           sx={{
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -73,9 +85,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
             mb: 2,
             fontWeight: 600,
           }}
-        >
-          {prompt.title}
-        </Typography>
+        />
 
         <Typography
           variant="body1"

@@ -27,6 +27,7 @@ const SharingPromptTemplates: React.FC<SharingPromptTemplatesProps> = ({
     isLoading,
     error,
   } = useGetSharingTemplatesQuery();
+  const templatesArray = Array.isArray(templates) ? templates : [];
   const getIcon = (templateId: string) => {
     switch (templateId) {
       case "social-media-share":
@@ -42,17 +43,25 @@ const SharingPromptTemplates: React.FC<SharingPromptTemplatesProps> = ({
     }
   };
 
-  const handleTemplateSelect = (template: (typeof templates)[0]) => {
+  const handleTemplateSelect = (template: {
+    id: string;
+    template: {
+      goal: string;
+      targetAudience: string;
+      context: string;
+      outputFormat: string;
+      creativity: string;
+      specificity: string;
+    };
+  }) => {
     const formData: PromptFormData = {
       goal: template.template.goal,
       targetAudience: template.template.targetAudience,
       context: template.template.context,
       outputFormat: template.template.outputFormat,
-      temperature: 0.7,
-      tone: template.template.tone,
-      maxLength: 500,
       creativity: template.template.creativity,
       specificity: template.template.specificity,
+      role: "", // Templates don't include role, user will need to select it
     };
     onSelectTemplate(formData);
   };
@@ -102,7 +111,7 @@ const SharingPromptTemplates: React.FC<SharingPromptTemplatesProps> = ({
           gap: 3,
         }}
       >
-        {templates.map((template) => (
+        {templatesArray.map((template) => (
           <Card
             key={template.id}
             sx={{
@@ -155,18 +164,6 @@ const SharingPromptTemplates: React.FC<SharingPromptTemplatesProps> = ({
               </Paper>
 
               <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                <Chip
-                  label={template.template.tone}
-                  size="small"
-                  variant="outlined"
-                  color="primary"
-                  sx={{
-                    borderColor:
-                      theme.palette.mode === "dark" ? "grey.600" : "grey.400",
-                    color:
-                      theme.palette.mode === "dark" ? "grey.300" : "grey.700",
-                  }}
-                />
                 <Chip
                   label={template.template.creativity}
                   size="small"

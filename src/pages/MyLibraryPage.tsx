@@ -17,12 +17,14 @@ import {
 import { Search, Add, Edit, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import {
-  useGetUserPromptsQuery,
+  useGetPromptsQuery,
   useDeletePromptMutation,
+  useUpdatePromptMutation,
 } from "../services/apiSlice";
 import PromptCard from "../components/PromptCard";
 import Loader from "../components/Loader";
 import Modal from "../components/Modal";
+import { useAuth } from "../contexts/useAuth";
 
 const MyLibraryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,10 +32,16 @@ const MyLibraryPage: React.FC = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { data: allPrompts = [], error, isLoading } = useGetPromptsQuery();
 
-  const { data: prompts = [], error, isLoading } = useGetUserPromptsQuery();
+  // Filter for private prompts (is_shared: false)
+  const prompts = allPrompts.filter(
+    (prompt) => !prompt.isPublic && prompt.author === user?.username
+  );
 
   const [deletePrompt] = useDeletePromptMutation();
+  const [updatePrompt] = useUpdatePromptMutation();
 
   const handleDeleteClick = (promptId: string) => {
     setPromptToDelete(promptId);
@@ -49,6 +57,18 @@ const MyLibraryPage: React.FC = () => {
       } catch (error) {
         console.error("Failed to delete prompt:", error);
       }
+    }
+  };
+
+  const handleTitleUpdate = async (promptId: string, newTitle: string) => {
+    try {
+      await updatePrompt({
+        id: promptId,
+        title: newTitle,
+      }).unwrap();
+    } catch (error) {
+      console.error("Failed to update title:", error);
+      throw error; // Re-throw to let EditableTitle handle the error
     }
   };
 
@@ -119,7 +139,7 @@ const MyLibraryPage: React.FC = () => {
             gutterBottom
             sx={{ fontSize: { xs: "1.75rem", sm: "2.125rem" } }}
           >
-            My Library
+            My Workshop
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Manage your personal collection of prompts.
@@ -172,7 +192,11 @@ const MyLibraryPage: React.FC = () => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 label="Sort by"
+                displayEmpty
               >
+                <MenuItem value="" disabled>
+                  <em>Select sorting option...</em>
+                </MenuItem>
                 <MenuItem value="newest">Newest First</MenuItem>
                 <MenuItem value="oldest">Oldest First</MenuItem>
                 <MenuItem value="rating">Highest Rated</MenuItem>
@@ -251,7 +275,9 @@ const MyLibraryPage: React.FC = () => {
               <PromptCard
                 prompt={prompt}
                 onUpvote={() => {}} // No upvoting for own prompts
+                onTitleUpdate={handleTitleUpdate}
                 showUpvote={false}
+                allowTitleEdit={true}
               />
 
               {/* Action buttons overlay */}

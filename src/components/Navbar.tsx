@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
                 onClick={() => handleNavigation("/")}
                 selected={isActive("/")}
               >
-                <ListItemText primary="Team Library" />
+                <ListItemText primary="Bookshelf" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -86,15 +86,32 @@ const Navbar: React.FC = () => {
                 onClick={() => handleNavigation("/my-library")}
                 selected={isActive("/my-library")}
               >
-                <ListItemText primary="My Library" />
+                <ListItemText primary="My Workshop" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => handleNavigation("/builder")}
-                sx={{ color: "secondary.main", fontWeight: 600 }}
+                sx={{
+                  fontWeight: 600,
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  margin: 1,
+                  borderRadius: 1,
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
               >
                 <ListItemText primary="Create Prompt" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => handleNavigation("/guide")}
+                selected={isActive("/guide")}
+              >
+                <ListItemText primary="Prompting Hacks" />
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1 }} />
@@ -111,10 +128,10 @@ const Navbar: React.FC = () => {
                 <ListItem>
                   <Box sx={{ width: "100%" }}>
                     <Typography variant="body2" fontWeight={600}>
-                      {user.name}
+                      {user.username}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {user.email} • {user.role}
+                      User
                     </Typography>
                   </Box>
                 </ListItem>
@@ -143,7 +160,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <AppBar position="static" elevation={1}>
+      <AppBar position="fixed" elevation={1} sx={{ zIndex: 1300, top: 0 }}>
         <Toolbar>
           {isMobile && isAuthenticated && (
             <IconButton
@@ -182,7 +199,7 @@ const Navbar: React.FC = () => {
                       textDecoration: isActive("/") ? "underline" : "none",
                     }}
                   >
-                    Team Library
+                    Bookshelf
                   </Button>
 
                   <Button
@@ -195,16 +212,33 @@ const Navbar: React.FC = () => {
                         : "none",
                     }}
                   >
-                    My Library
+                    My Workshop
+                  </Button>
+
+                  <Button
+                    color="inherit"
+                    onClick={() => navigate("/guide")}
+                    sx={{
+                      fontWeight: isActive("/guide") ? 600 : 400,
+                      textDecoration: isActive("/guide") ? "underline" : "none",
+                    }}
+                  >
+                    Prompting Hacks
                   </Button>
 
                   <Button
                     variant="contained"
-                    color="secondary"
+                    color="primary"
                     onClick={() => navigate("/builder")}
                     sx={{
                       ml: 2,
                       fontWeight: 600,
+                      backgroundColor: "primary.main",
+                      color: "white",
+                      "&:hover": {
+                        backgroundColor: "primary.dark",
+                      },
+                      boxShadow: 2,
                     }}
                   >
                     Create Prompt
@@ -213,10 +247,16 @@ const Navbar: React.FC = () => {
               ) : (
                 <Button
                   variant="contained"
-                  color="secondary"
+                  color="primary"
                   onClick={() => navigate("/login")}
                   sx={{
                     fontWeight: 600,
+                    backgroundColor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                      backgroundColor: "primary.dark",
+                    },
+                    boxShadow: 2,
                   }}
                 >
                   Sign In
@@ -244,7 +284,7 @@ const Navbar: React.FC = () => {
                     <Avatar
                       sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}
                     >
-                      {user.name.charAt(0).toUpperCase()}
+                      {user.username.charAt(0).toUpperCase()}
                     </Avatar>
                   </IconButton>
                   <Menu
@@ -265,10 +305,10 @@ const Navbar: React.FC = () => {
                     <MenuItem disabled>
                       <Box>
                         <Typography variant="body2" fontWeight={600}>
-                          {user.name}
+                          {user.username}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {user.email} • {user.role}
+                          User
                         </Typography>
                       </Box>
                     </MenuItem>

@@ -4,7 +4,7 @@ A modern, team-focused AI prompt management platform built with React, TypeScrip
 
 ## 🚀 Features
 
-- **Team Library**: Browse and discover prompts created by your team members
+- **Bookshelf**: Browse and discover prompts created by your team members
 - **Guided Prompt Builder**: Create effective AI prompts using our guided form with templates
 - **Sharing Templates**: Pre-built templates for social media and content sharing prompts
 - **Advanced Search & Filtering**: Find prompts by keywords, tags, and various sorting options

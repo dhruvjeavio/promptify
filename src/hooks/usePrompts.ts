@@ -1,32 +1,29 @@
-import {
-  useGetPublicPromptsQuery,
-  useGetUserPromptsQuery,
-} from "../services/apiSlice";
+import { useGetPromptsQuery } from "../services/apiSlice";
 import type { Prompt } from "../types/index";
 
 export const usePrompts = () => {
   const {
-    data: publicPrompts = [],
-    error: publicError,
-    isLoading: publicLoading,
-    refetch: refetchPublic,
-  } = useGetPublicPromptsQuery();
+    data: allPrompts = [],
+    error: allError,
+    isLoading: allLoading,
+    refetch: refetchAll,
+  } = useGetPromptsQuery();
 
-  const {
-    data: userPrompts = [],
-    error: userError,
-    isLoading: userLoading,
-    refetch: refetchUser,
-  } = useGetUserPromptsQuery();
+  const publicPrompts: Prompt[] = allPrompts.filter(
+    (prompt) => prompt.isPublic
+  );
 
-  const allPrompts: Prompt[] = [...publicPrompts, ...userPrompts];
+  const userPrompts: Prompt[] = allPrompts.filter((prompt) => !prompt.isPublic);
 
-  const isLoading = publicLoading || userLoading;
-  const hasError = !!publicError || !!userError;
+  const isLoading = allLoading;
+  const hasError = !!allError;
 
-  const refetchAll = () => {
-    refetchPublic();
-    refetchUser();
+  const refetchPublic = () => {
+    refetchAll();
+  };
+
+  const refetchUser = () => {
+    refetchAll();
   };
 
   return {

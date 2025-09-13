@@ -23,13 +23,14 @@ import {
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  useGetPromptByIdQuery,
+  useGetPromptsQuery,
   useUpvotePromptMutation,
   useUpdatePromptMutation,
 } from "../services/apiSlice";
 import PromptRunner from "../components/PromptRunner";
 import Loader from "../components/Loader";
 import SharePrompt from "../components/SharePrompt";
+import { EditableTitle } from "../components";
 
 const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,7 +39,8 @@ const PromptDetailPage: React.FC = () => {
   const [editedPrompt, setEditedPrompt] = useState("");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
-  const { data: prompt, error, isLoading } = useGetPromptByIdQuery(id!);
+  const { data: allPrompts = [], error, isLoading } = useGetPromptsQuery();
+  const prompt = allPrompts.find((p) => p.id === id);
 
   const [upvotePrompt] = useUpvotePromptMutation();
   const [updatePrompt] = useUpdatePromptMutation();
@@ -57,6 +59,20 @@ const PromptDetailPage: React.FC = () => {
     if (prompt) {
       setEditedPrompt(prompt.promptText);
       setIsEditing(true);
+    }
+  };
+
+  const handleTitleUpdate = async (newTitle: string) => {
+    if (id && prompt) {
+      try {
+        await updatePrompt({
+          id,
+          title: newTitle,
+        }).unwrap();
+      } catch (error) {
+        console.error("Failed to update title:", error);
+        throw error; // Re-throw to let EditableTitle handle the error
+      }
     }
   };
 
@@ -118,7 +134,7 @@ const PromptDetailPage: React.FC = () => {
           onClick={() => navigate("/")}
           sx={{ textDecoration: "none" }}
         >
-          Team Library
+          Bookshelf
         </Link>
         <Typography variant="body2" color="text.primary">
           {prompt.title}
@@ -138,16 +154,12 @@ const PromptDetailPage: React.FC = () => {
           }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
+            <EditableTitle
+              title={prompt.title}
+              onSave={handleTitleUpdate}
               variant="h4"
-              gutterBottom
-              sx={{
-                wordBreak: "break-word",
-                fontSize: { xs: "1.75rem", sm: "2.125rem" },
-              }}
-            >
-              {prompt.title}
-            </Typography>
+              sx={{ mb: 2 }}
+            />
 
             <Box
               sx={{
@@ -192,12 +204,6 @@ const PromptDetailPage: React.FC = () => {
             <Tooltip title="Share prompt">
               <IconButton onClick={handleShare}>
                 <Share />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title={isEditing ? "Cancel editing" : "Edit prompt"}>
-              <IconButton onClick={isEditing ? handleCancel : handleEdit}>
-                {isEditing ? <VisibilityOff /> : <Edit />}
               </IconButton>
             </Tooltip>
           </Box>

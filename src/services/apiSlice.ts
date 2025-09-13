@@ -1,15 +1,33 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { BaseQueryFn } from "@reduxjs/toolkit/query/react";
 import type {
   Prompt,
   CreatePromptRequest,
   UpdatePromptRequest,
   PromptRefinement,
+  PromptAnalysisHistory,
 } from "../types/index";
 
+// API response type
+interface ApiPromptResponse {
+  id: number;
+  text: string;
+  title: string;
+  author: string;
+  upvotes: number;
+  intended_use: string;
+  target_audience: string;
+  tags: string;
+  is_shared: boolean;
+  expected_outcome?: string;
+  username?: string;
+  rating?: number;
+  created_at?: string;
+}
+
 // Environment variables
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://172.23.17.86:8000";
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api" // Use proxy in development
+  : import.meta.env.VITE_API_BASE_URL || "http://172.23.17.86:8000";
 const API_KEY = import.meta.env.VITE_API_KEY || "admin";
 
 // Mock data for development
@@ -189,183 +207,89 @@ export const ROLES = [
 // Real API base query
 const realApiQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  timeout: 1000,
+  timeout: 100000, // Increased timeout for ngrok
   prepareHeaders: (headers) => {
     headers.set("X-Authorization", API_KEY);
     headers.set("Content-Type", "application/json");
+    headers.set("ngrok-skip-browser-warning", "true"); // Skip ngrok browser warning
+
+    // Add authentication token if available
+    const token = localStorage.getItem("promptify_token");
+    if (token) {
+      headers.set("x-access-token", token);
+    }
+
     return headers;
   },
 });
 
-// Mock base query for fallback
-const mockBaseQuery = async (
-  arg: string | { url: string; method?: string; body?: unknown }
-) => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  const url = typeof arg === "string" ? arg : arg.url;
-  const method = typeof arg === "string" ? "GET" : arg.method || "GET";
-  const body = typeof arg === "string" ? undefined : arg.body;
-
-  // Handle GET requests
-  if (method === "GET") {
-    if (url === "/prompts") {
-      return { data: mockPrompts };
-    } else if (url === "/prompts/public") {
-      return { data: mockPrompts.filter((prompt) => prompt.isPublic) };
-    } else if (url === "/prompts/user") {
-      return { data: mockPrompts.filter((prompt) => !prompt.isPublic) };
-    } else if (url === "/templates/sharing") {
-      return { data: SHARING_PROMPT_TEMPLATES };
-    } else if (url === "/roles") {
-      return { data: ROLES };
-    } else if (
-      url.startsWith("/prompts/") &&
-      url !== "/prompts/public" &&
-      url !== "/prompts/user"
-    ) {
-      const id = url.split("/")[2];
-      const prompt = mockPrompts.find((p) => p.id === id);
-      if (!prompt) {
-        return { error: { status: 404, data: "Prompt not found" } };
-      }
-      return { data: prompt };
-    }
-  }
-
-  // Handle POST requests (Create)
-  if (method === "POST") {
-    if (url === "/prompts") {
-      const newId = (mockPrompts.length + 1).toString();
-      const createdPrompt: Prompt = {
-        ...(body as CreatePromptRequest),
-        id: newId,
-        author: "Current User",
-        upvotes: 0,
-        rating: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      mockPrompts.unshift(createdPrompt);
-      return { data: createdPrompt };
-    } else if (url.includes("/upvote")) {
-      const id = url.split("/")[2];
-      const prompt = mockPrompts.find((p) => p.id === id);
-      if (!prompt) {
-        return { error: { status: 404, data: "Prompt not found" } };
-      }
-      prompt.upvotes += 1;
-      return { data: prompt };
-    } else if (url.includes("/analyze")) {
-      // Mock prompt analysis endpoint
-      const promptText = (body as { promptText?: string })?.promptText || "";
-      const overallScore = Math.floor(Math.random() * 4) + 6; // 6-10
-      const clarity = Math.floor(Math.random() * 3) + 7; // 7-10
-      const specificity = Math.floor(Math.random() * 4) + 5; // 5-9
-      const effectiveness = Math.floor(Math.random() * 3) + 6; // 6-9
-
-      const refinement: PromptRefinement = {
-        originalPrompt: promptText,
-        refinedPrompt: `${promptText}\n\nPlease provide a detailed response with specific examples and step-by-step instructions.`,
-        score: {
-          overallScore,
-          clarity,
-          specificity,
-          effectiveness,
-          suggestions: [
-            "Consider adding more specific examples",
-            "Break down complex instructions into smaller steps",
-            "Include expected output format in the prompt",
-            "Add context about the target audience",
-          ],
-        },
-        improvements: [
-          "Added explicit request for detailed response",
-          "Included instruction for step-by-step format",
-          "Enhanced specificity requirements",
-        ],
-      };
-      return { data: refinement };
-    }
-  }
-
-  // Handle PUT requests (Update)
-  if (method === "PUT") {
-    const id = url.split("/")[2];
-    const index = mockPrompts.findIndex((p) => p.id === id);
-    if (index === -1) {
-      return { error: { status: 404, data: "Prompt not found" } };
-    }
-    mockPrompts[index] = {
-      ...mockPrompts[index],
-      ...(body as Partial<Prompt>),
-      updatedAt: new Date().toISOString(),
-    };
-    return { data: mockPrompts[index] };
-  }
-
-  // Handle DELETE requests
-  if (method === "DELETE") {
-    const id = url.split("/")[2];
-    const index = mockPrompts.findIndex((p) => p.id === id);
-    if (index === -1) {
-      return { error: { status: 404, data: "Prompt not found" } };
-    }
-    mockPrompts.splice(index, 1);
-    return { data: undefined };
-  }
-
-  return { data: null };
-};
-
-// Fallback base query that uses mock data when API fails
-const baseQuery: BaseQueryFn = async (args, api, extraOptions) => {
-  try {
-    // Try the real API first
-    const result = await realApiQuery(args, api, extraOptions);
-
-    // If the API call was successful, return the result
-    if (result.data) {
-      return result;
-    }
-
-    // If there's an error, fall back to mock data
-    return await mockBaseQuery(args);
-  } catch (error) {
-    // If there's a network error or other exception, fall back to mock data
-    console.warn("API call failed, falling back to mock data:", error);
-    return await mockBaseQuery(args);
-  }
-};
+// Use real API base query
+const baseQuery = realApiQuery;
 
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQuery,
-  tagTypes: ["Prompt"],
+  tagTypes: ["Prompt", "PromptHistory"],
   endpoints: (builder) => ({
-    // Get all prompts
-    getPrompts: builder.query<Prompt[], void>({
+    // Get all prompts with optional filtering
+    getPrompts: builder.query<
+      Prompt[],
+      { filter?: "all" | "public" | "private" } | void
+    >({
       query: () => "/prompts",
-      providesTags: ["Prompt"],
-    }),
+      transformResponse: (response: ApiPromptResponse[], _meta, arg) => {
+        const prompts = response.map((item: ApiPromptResponse) => ({
+          id: item.id.toString(),
+          title: item.title || "Untitled Prompt",
+          promptText: item.text || "",
+          intendedUse: item.intended_use || "",
+          targetAudience: item.target_audience || "",
+          tags: item.tags
+            ? item.tags.split(", ").filter((tag: string) => tag.trim())
+            : [],
+          author: item.author || "Unknown",
+          upvotes: 0,
+          rating: 4.0,
+          isPublic: item.is_shared || false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          username: item.username || "",
+        }));
 
-    // Get public prompts only
-    getPublicPrompts: builder.query<Prompt[], void>({
-      query: () => "/prompts/public",
+        // Apply filtering based on is_shared
+        if (arg?.filter === "public") {
+          return prompts.filter((prompt) => prompt.isPublic);
+        } else if (arg?.filter === "private") {
+          return prompts.filter((prompt) => !prompt.isPublic);
+        }
+
+        return prompts;
+      },
       providesTags: ["Prompt"],
     }),
 
     // Get user's private prompts
     getUserPrompts: builder.query<Prompt[], void>({
       query: () => "/prompts/user",
+      transformResponse: (response: ApiPromptResponse[]) =>
+        response.map((item: ApiPromptResponse) => ({
+          id: item.id.toString(),
+          title: item.title || "Untitled Prompt",
+          promptText: item.text || "",
+          intendedUse: item.intended_use || "",
+          targetAudience: item.target_audience || "",
+          tags: item.tags
+            ? item.tags.split(", ").filter((tag: string) => tag.trim())
+            : [],
+          author: item.author || "Unknown",
+          upvotes: 0,
+          rating: item.upvotes,
+          isPublic: item.is_shared || false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          username: item.username || "",
+        })),
       providesTags: ["Prompt"],
-    }),
-
-    // Get single prompt by ID
-    getPromptById: builder.query<Prompt, string>({
-      query: (id) => `/prompts/${id}`,
-      providesTags: (_result, _error, id) => [{ type: "Prompt", id }],
     }),
 
     // Create new prompt
@@ -373,7 +297,32 @@ export const apiSlice = createApi({
       query: (newPrompt) => ({
         url: "/prompts",
         method: "POST",
-        body: newPrompt,
+        body: {
+          text: newPrompt.promptText,
+          title: newPrompt.title,
+          intended_use: newPrompt.intendedUse,
+          target_audience: newPrompt.targetAudience,
+          // expected_outcome: newPrompt.expectedOutcome,
+          tags: newPrompt.tags.join(", "),
+          is_public: newPrompt.isPublic,
+        },
+      }),
+      transformResponse: (response: ApiPromptResponse) => ({
+        id: response.id.toString(),
+        title: response.title || "Untitled Prompt",
+        promptText: response.text || "",
+        intendedUse: response.intended_use || "",
+        targetAudience: response.target_audience || "",
+        tags: response.tags
+          ? response.tags.split(", ").filter((tag: string) => tag.trim())
+          : [],
+        author: response.author || "Unknown",
+        upvotes: response.upvotes,
+        rating: response.rating,
+        isPublic: response.is_shared || false,
+        createdAt: response.created_at,
+        updatedAt: response.created_at || "",
+        username: response.username || "",
       }),
       invalidatesTags: ["Prompt"],
     }),
@@ -406,41 +355,82 @@ export const apiSlice = createApi({
       invalidatesTags: (_result, _error, id) => [{ type: "Prompt", id }],
     }),
 
-    // Analyze and refine a prompt
-    analyzePrompt: builder.mutation<PromptRefinement, { promptText: string }>({
-      query: (body) => ({
-        url: "/prompts/analyze",
-        method: "POST",
-        body,
+    // Publish a prompt (make it public)
+    publishPrompt: builder.mutation<ApiPromptResponse, string>({
+      query: (id) => ({
+        url: `/prompts/${id}/publish`,
+        method: "PUT",
       }),
+      transformResponse: (response: ApiPromptResponse) => response,
+      invalidatesTags: (_result, _error, id) => [{ type: "Prompt", id }],
+    }),
+
+    // Analyze and refine a prompt
+    analyzePrompt: builder.mutation<PromptRefinement, string>({
+      query: (promptId) => {
+        return {
+          url: `/prompts/${promptId}/generate`,
+          method: "POST",
+        };
+      },
+      transformResponse: (response: PromptAnalysisHistory) => {
+        return {
+          originalPrompt: response.generated_text,
+          refinedPrompt: response.analysis.refined_prompt,
+          score: {
+            overallScore: response.analysis.overall_score,
+            clarity: response.analysis.clarity,
+            specificity: response.analysis.specificity,
+            effectiveness: response.analysis.effectiveness,
+            suggestions: response.analysis.additional_suggestions,
+          },
+          improvements: response.analysis.improvements_made,
+        };
+      },
     }),
 
     // Get sharing prompt templates
-    getSharingTemplates: builder.query<typeof SHARING_PROMPT_TEMPLATES, void>({
+    getSharingTemplates: builder.query<unknown, void>({
       query: () => "/templates/sharing",
-      // Mock implementation
-      transformResponse: () => SHARING_PROMPT_TEMPLATES,
     }),
 
     // Get available roles
-    getRoles: builder.query<typeof ROLES, void>({
+    getRoles: builder.query<string[], void>({
       query: () => "/roles",
-      // Mock implementation
       transformResponse: () => ROLES,
+    }),
+
+    // Get prompt history
+    getPromptHistory: builder.query<PromptAnalysisHistory[], string>({
+      query: (promptId) => `/prompts/${promptId}/history`,
+      transformResponse: (response: PromptAnalysisHistory[]) => response,
+      providesTags: (_result, _error, promptId) => [
+        { type: "Prompt", id: promptId },
+        { type: "PromptHistory", id: promptId },
+      ],
+    }),
+
+    // Logout user
+    logout: builder.mutation<{ message: string }, void>({
+      query: () => ({
+        url: "/logout",
+        method: "POST",
+      }),
     }),
   }),
 });
 
 export const {
   useGetPromptsQuery,
-  useGetPublicPromptsQuery,
   useGetUserPromptsQuery,
-  useGetPromptByIdQuery,
   useCreatePromptMutation,
   useUpdatePromptMutation,
   useDeletePromptMutation,
   useUpvotePromptMutation,
+  usePublishPromptMutation,
   useAnalyzePromptMutation,
   useGetSharingTemplatesQuery,
   useGetRolesQuery,
+  useGetPromptHistoryQuery,
+  useLogoutMutation,
 } = apiSlice;

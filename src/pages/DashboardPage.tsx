@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { Search, FilterList } from "@mui/icons-material";
 import {
-  useGetPublicPromptsQuery,
+  useGetPromptsQuery,
   useUpvotePromptMutation,
 } from "../services/apiSlice";
 import PromptCard from "../components/PromptCard";
@@ -25,7 +25,8 @@ const DashboardPage: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
 
-  const { data: prompts = [], error, isLoading } = useGetPublicPromptsQuery();
+  const { data: allPrompts = [], error, isLoading } = useGetPromptsQuery();
+  const prompts = allPrompts.filter((prompt) => prompt.isPublic);
 
   const [upvotePrompt] = useUpvotePromptMutation();
 
@@ -91,7 +92,7 @@ const DashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 4, md: 6 } }}>
       <Typography variant="h3" gutterBottom sx={{ mb: 2 }}>
-        Team Library
+        Bookshelf
       </Typography>
       <Typography
         variant="h6"
@@ -165,7 +166,11 @@ const DashboardPage: React.FC = () => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 label="Sort by"
+                displayEmpty
               >
+                <MenuItem value="" disabled>
+                  <em>Select sorting option...</em>
+                </MenuItem>
                 <MenuItem value="newest">Newest First</MenuItem>
                 <MenuItem value="oldest">Oldest First</MenuItem>
                 <MenuItem value="rating">Highest Rated</MenuItem>

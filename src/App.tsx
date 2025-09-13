@@ -11,6 +11,7 @@ import { Box } from "@mui/material";
 import { store } from "./store";
 import { CustomThemeProvider } from "./theme";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import { useAuth } from "./contexts/useAuth";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -19,6 +20,7 @@ import DashboardPage from "./pages/DashboardPage";
 import MyLibraryPage from "./pages/MyLibraryPage";
 import PromptBuilderPage from "./pages/PromptBuilderPage";
 import PromptDetailPage from "./pages/PromptDetailPage";
+import PromptingGuidePage from "./pages/PromptingGuidePage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import type { LoginFormData } from "./types/index";
@@ -35,13 +37,13 @@ const AppContent: React.FC = () => {
     setLoginError(null);
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      login(userData);
+      await login(userData);
       // Redirect to dashboard after successful login
       navigate("/");
     } catch {
-      setLoginError("Login failed. Please try again.");
+      setLoginError(
+        "Login failed. Please check your credentials and try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +72,7 @@ const AppContent: React.FC = () => {
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
+          paddingTop: !isLoginPage ? "64px" : 0, // Account for fixed header height
         }}
       >
         <Routes>
@@ -115,6 +118,14 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/guide"
+            element={
+              <ProtectedRoute>
+                <PromptingGuidePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Box>
@@ -129,9 +140,11 @@ function App() {
     <Provider store={store}>
       <CustomThemeProvider>
         <AuthProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <ToastProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </ToastProvider>
         </AuthProvider>
       </CustomThemeProvider>
     </Provider>

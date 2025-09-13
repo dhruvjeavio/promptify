@@ -6,7 +6,6 @@ import {
   Button,
   Paper,
   Divider,
-  Alert,
   CircularProgress,
   IconButton,
   Tooltip,
@@ -29,9 +28,18 @@ import {
   TrendingUp,
   Lightbulb,
   CheckCircle,
+  History,
 } from "@mui/icons-material";
-import type { Prompt, PromptRefinement } from "../types/index";
+import type {
+  Prompt,
+  PromptRefinement,
+  PromptAnalysisHistory,
+} from "../types/index";
 import { useAnalyzePromptMutation } from "../services/apiSlice";
+import { useAnalysisHistory } from "../hooks/useAnalysisHistory";
+import { useToast } from "../contexts/ToastContext";
+import EnhancedAlert from "./EnhancedAlert";
+import PromptAnalysisHistoryModal from "./PromptAnalysisHistoryModal";
 
 interface PromptRunnerProps {
   prompt: Prompt;
@@ -45,10 +53,13 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
   const [promptText, setPromptText] = useState(prompt.promptText);
   const [refinement, setRefinement] = useState<PromptRefinement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [analyzePrompt, { isLoading: isRunning }] = useAnalyzePromptMutation();
+  const { history, saveAnalysis } = useAnalysisHistory(prompt.id);
+  const { showSuccess, showError } = useToast();
 
   const handleRunPrompt = async () => {
     if (!promptText.trim()) {
@@ -60,21 +71,36 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
     setRefinement(null);
 
     try {
-      const result = await analyzePrompt({ promptText }).unwrap();
+      // TODO: Improve request
+      const result = await analyzePrompt(prompt.id).unwrap();
       setRefinement(result);
+      // Save analysis to history
+      saveAnalysis(result);
     } catch {
       setError("Failed to analyze prompt. Please try again.");
     }
   };
 
-  const handleCopyRefinedPrompt = () => {
+  const handleCopyRefinedPrompt = async () => {
     if (refinement) {
-      navigator.clipboard.writeText(refinement.refinedPrompt);
+      try {
+        await navigator.clipboard.writeText(refinement.refinedPrompt);
+        showSuccess("Refined prompt copied to clipboard!");
+      } catch (error) {
+        console.error("Failed to copy refined prompt:", error);
+        showError("Failed to copy refined prompt");
+      }
     }
   };
 
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(promptText);
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(promptText);
+      showSuccess("Prompt copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy prompt:", error);
+      showError("Failed to copy prompt");
+    }
   };
 
   const handleDownloadRefinement = () => {
@@ -98,6 +124,23 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
     setError(null);
   };
 
+  const handleLoadAnalysis = (analysis: PromptAnalysisHistory) => {
+    setPromptText(analysis.generated_text);
+    setRefinement({
+      originalPrompt: analysis.generated_text,
+      refinedPrompt: analysis.analysis.refined_prompt,
+      score: {
+        overallScore: analysis.analysis.overall_score,
+        clarity: analysis.analysis.clarity,
+        specificity: analysis.analysis.specificity,
+        effectiveness: analysis.analysis.effectiveness,
+        suggestions: analysis.analysis.additional_suggestions,
+      },
+      improvements: analysis.analysis.improvements_made,
+    });
+    setHistoryModalOpen(false);
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h5" gutterBottom>
@@ -109,28 +152,6 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
         improvement. Edit the prompt below and click "Analyze Prompt" to get
         scoring and refinement suggestions.
       </Typography>
-
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Button
-          variant="contained"
-          startIcon={
-            isRunning ? <CircularProgress size={20} /> : <TrendingUp />
-          }
-          onClick={handleRunPrompt}
-          disabled={isRunning || !promptText.trim()}
-        >
-          {isRunning ? "Analyzing..." : "Analyze Prompt"}
-        </Button>
-
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={handleReset}
-          disabled={isRunning}
-        >
-          Reset
-        </Button>
-      </Box>
 
       <Box
         sx={{
@@ -176,6 +197,53 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
               },
             }}
           />
+
+          {/* Action Buttons - Moved below the prompt */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mt: 2,
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            {/* Left side buttons */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                startIcon={<Refresh />}
+                onClick={handleReset}
+                disabled={isRunning}
+              >
+                Reset
+              </Button>
+
+              {history.length > 0 && (
+                <Button
+                  variant="outlined"
+                  startIcon={<History />}
+                  onClick={() => setHistoryModalOpen(true)}
+                  disabled={isRunning}
+                >
+                  History ({history.length})
+                </Button>
+              )}
+            </Box>
+
+            {/* Right side - Analyze Prompt button */}
+            <Button
+              variant="contained"
+              startIcon={
+                isRunning ? <CircularProgress size={20} /> : <TrendingUp />
+              }
+              onClick={handleRunPrompt}
+              disabled={isRunning || !promptText.trim()}
+            >
+              {isRunning ? "Analyzing..." : "Analyze Prompt"}
+            </Button>
+          </Box>
         </Paper>
 
         {/* Analysis Results */}
@@ -206,9 +274,9 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <EnhancedAlert severity="error" sx={{ mb: 2 }}>
               {error}
-            </Alert>
+            </EnhancedAlert>
           )}
 
           {isRunning ? (
@@ -378,6 +446,14 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
           </Typography>
         </Box>
       )}
+
+      {/* History Modal */}
+      <PromptAnalysisHistoryModal
+        open={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        history={history}
+        onLoadAnalysis={handleLoadAnalysis}
+      />
     </Box>
   );
 };

@@ -10,7 +10,6 @@ import {
   TextField,
   IconButton,
   Tooltip,
-  Snackbar,
   Alert,
   Divider,
   Chip,
@@ -33,8 +32,12 @@ import {
   Telegram,
   Close,
   CheckCircle,
+  Public,
+  Lock,
 } from "@mui/icons-material";
 import type { Prompt } from "../types/index";
+import { usePublishPromptMutation } from "../services/apiSlice";
+import { useToast } from "../contexts/ToastContext";
 
 interface SharePromptProps {
   prompt: Prompt;
@@ -44,9 +47,11 @@ interface SharePromptProps {
 
 const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
+  const [isMakingPublic, setIsMakingPublic] = useState(false);
   const theme = useTheme();
+  const [publishPrompt] = usePublishPromptMutation();
+  const { showSuccess, showError } = useToast();
 
   const baseUrl = window.location.origin;
   const promptUrl = `${baseUrl}/prompts/${prompt.id}`;
@@ -58,10 +63,11 @@ const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
     try {
       await navigator.clipboard.writeText(promptUrl);
       setCopied(true);
-      setSnackbarOpen(true);
+      showSuccess("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy link:", error);
+      showError("Failed to copy link");
     }
   };
 
@@ -69,10 +75,11 @@ const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
     try {
       await navigator.clipboard.writeText(fullShareText);
       setCopied(true);
-      setSnackbarOpen(true);
+      showSuccess("Text with message copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy text:", error);
+      showError("Failed to copy text");
     }
   };
 
@@ -90,6 +97,24 @@ const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
     } else {
       // Fallback to copying to clipboard
       handleCopyLink();
+    }
+  };
+
+  const handleMakePublic = async () => {
+    if (prompt.isPublic) return;
+
+    setIsMakingPublic(true);
+    try {
+      await publishPrompt(prompt.id).unwrap();
+
+      showSuccess("Prompt is now public and can be shared!");
+      // Update the prompt object locally
+      prompt.isPublic = true;
+    } catch (error) {
+      console.error("Failed to make prompt public:", error);
+      showError("Failed to make prompt public. Please try again.");
+    } finally {
+      setIsMakingPublic(false);
     }
   };
 
@@ -206,6 +231,42 @@ const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
               {prompt.promptText.substring(0, 100)}...
             </Typography>
           </Paper>
+
+          {/* Make Public Button - Only show if prompt is private */}
+          {!prompt.isPublic && (
+            <Box sx={{ mb: 3 }}>
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 2,
+                  "& .MuiAlert-message": {
+                    width: "100%",
+                  },
+                }}
+                action={
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={isMakingPublic ? <Lock /> : <Public />}
+                    onClick={handleMakePublic}
+                    disabled={isMakingPublic}
+                    size="small"
+                    sx={{
+                      ml: 2,
+                      minWidth: 140,
+                    }}
+                  >
+                    {isMakingPublic ? "Making Public..." : "Make Public"}
+                  </Button>
+                }
+              >
+                <Typography variant="body2">
+                  This prompt is currently private. Make it public to share with
+                  others.
+                </Typography>
+              </Alert>
+            </Box>
+          )}
 
           {/* Custom Message */}
           <TextField
@@ -383,21 +444,6 @@ const SharePrompt: React.FC<SharePromptProps> = ({ prompt, open, onClose }) => {
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          {copied ? "Copied to clipboard!" : "Link copied!"}
-        </Alert>
-      </Snackbar>
     </>
   );
 };

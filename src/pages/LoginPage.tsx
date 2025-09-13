@@ -6,36 +6,28 @@ import {
   Button,
   Container,
   Paper,
-  Alert,
-  Autocomplete,
+  Avatar,
 } from "@mui/material";
-import { Person, Email, Work } from "@mui/icons-material";
+import { Person, Lock } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import type { LoginFormData } from "../types/index";
-import { useGetRolesQuery } from "../services/apiSlice";
+import { useTheme } from "../theme/useTheme";
+import { EnhancedAlert } from "../components";
 
 const schema = yup.object({
-  email: yup
+  username: yup
     .string()
     .trim()
-    .email("Please enter a valid email address")
-    .min(5, "Email must be at least 5 characters")
-    .max(100, "Email must be less than 100 characters")
-    .required("Email is required"),
-  name: yup
+    .min(3, "Username must be at least 3 characters")
+    .max(50, "Username must be less than 50 characters")
+    .required("Username is required"),
+  password: yup
     .string()
-    .trim()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be less than 50 characters")
-    .required("Name is required"),
-  role: yup
-    .string()
-    .trim()
-    .min(2, "Role must be at least 2 characters")
-    .max(50, "Role must be less than 50 characters")
-    .required("Role is required"),
+    .min(6, "Password must be at least 6 characters")
+    .max(100, "Password must be less than 100 characters")
+    .required("Password is required"),
 });
 
 interface LoginPageProps {
@@ -49,54 +41,22 @@ const LoginPage: React.FC<LoginPageProps> = ({
   error,
   loading = false,
 }) => {
-  const [showCustomRole, setShowCustomRole] = React.useState(false);
-  const [customRole, setCustomRole] = React.useState("");
-  const { data: roles = [], isLoading: rolesLoading } = useGetRolesQuery();
+  const { mode } = useTheme();
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<LoginFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      email: "",
-      name: "",
-      role: "",
+      username: "",
+      password: "",
     },
   });
 
-  const watchedRole = watch("role");
-
-  React.useEffect(() => {
-    if (watchedRole === "Other") {
-      setShowCustomRole(true);
-    } else {
-      setShowCustomRole(false);
-      setCustomRole("");
-    }
-  }, [watchedRole]);
-
   const onSubmit = (data: LoginFormData) => {
-    // Validate custom role if "Other" is selected
-    if (showCustomRole) {
-      if (!customRole.trim()) {
-        return; // Don't submit if custom role is required but empty
-      }
-      if (customRole.trim().length < 2) {
-        return; // Don't submit if custom role is too short
-      }
-      if (customRole.trim().length > 50) {
-        return; // Don't submit if custom role is too long
-      }
-    }
-
-    const finalData = {
-      ...data,
-      role: showCustomRole && customRole ? customRole.trim() : data.role,
-    };
-    onLogin(finalData);
+    onLogin(data);
   };
 
   return (
@@ -130,6 +90,19 @@ const LoginPage: React.FC<LoginPageProps> = ({
           }}
         >
           <Box sx={{ textAlign: "center", mb: 4 }}>
+            <Box sx={{ mb: 3 }}>
+              <Avatar
+                src={`/${mode === "dark" ? "Dark Icon.png" : "Light Icon.png"}`}
+                alt="Promptify Logo"
+                sx={{
+                  width: { xs: 80, sm: 100 },
+                  height: { xs: 80, sm: 100 },
+                  mx: "auto",
+                  mb: 2,
+                  boxShadow: 3,
+                }}
+              />
+            </Box>
             <Typography
               variant="h3"
               gutterBottom
@@ -151,9 +124,9 @@ const LoginPage: React.FC<LoginPageProps> = ({
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <EnhancedAlert severity="error" sx={{ mb: 3 }}>
               {error}
-            </Alert>
+            </EnhancedAlert>
           )}
 
           <Box
@@ -162,38 +135,16 @@ const LoginPage: React.FC<LoginPageProps> = ({
             sx={{ mt: 3 }}
           >
             <Controller
-              name="email"
+              name="username"
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
                   fullWidth
-                  label="Email Address"
-                  type="email"
-                  placeholder="Enter your email address"
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <Email sx={{ mr: 1, color: "action.active" }} />
-                    ),
-                  }}
-                  sx={{ mb: 3 }}
-                />
-              )}
-            />
-
-            <Controller
-              name="name"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Full Name"
-                  placeholder="Enter your full name"
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
+                  label="Username *"
+                  placeholder="Enter your username"
+                  error={!!errors.username}
+                  helperText={errors.username?.message}
                   InputProps={{
                     startAdornment: (
                       <Person sx={{ mr: 1, color: "action.active" }} />
@@ -205,82 +156,32 @@ const LoginPage: React.FC<LoginPageProps> = ({
             />
 
             <Controller
-              name="role"
+              name="password"
               control={control}
-              render={({ field: { onChange, value, ...field } }) => (
-                <Autocomplete
+              render={({ field }) => (
+                <TextField
                   {...field}
-                  options={roles}
-                  value={value || ""}
-                  onChange={(_, newValue) => onChange(newValue || "")}
-                  loading={rolesLoading}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Role"
-                      placeholder="Select your role"
-                      error={!!errors.role}
-                      helperText={errors.role?.message}
-                      InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                          <>
-                            <Work sx={{ mr: 1, color: "action.active" }} />
-                            {params.InputProps.startAdornment}
-                          </>
-                        ),
-                      }}
-                    />
-                  )}
+                  fullWidth
+                  label="Password *"
+                  type="password"
+                  placeholder="Enter your password"
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  InputProps={{
+                    startAdornment: (
+                      <Lock sx={{ mr: 1, color: "action.active" }} />
+                    ),
+                  }}
                   sx={{ mb: 4 }}
-                  freeSolo
-                  disableClearable
                 />
               )}
             />
-
-            {showCustomRole && (
-              <TextField
-                fullWidth
-                label="Custom Role"
-                placeholder="Enter your custom role"
-                value={customRole}
-                onChange={(e) => setCustomRole(e.target.value)}
-                error={
-                  showCustomRole &&
-                  (!customRole.trim() ||
-                    customRole.trim().length < 2 ||
-                    customRole.trim().length > 50)
-                }
-                helperText={
-                  showCustomRole && !customRole.trim()
-                    ? "Please enter your custom role"
-                    : showCustomRole && customRole.trim().length < 2
-                      ? "Custom role must be at least 2 characters"
-                      : showCustomRole && customRole.trim().length > 50
-                        ? "Custom role must be less than 50 characters"
-                        : ""
-                }
-                InputProps={{
-                  startAdornment: (
-                    <Work sx={{ mr: 1, color: "action.active" }} />
-                  ),
-                }}
-                sx={{ mb: 3 }}
-              />
-            )}
 
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              disabled={
-                loading ||
-                (showCustomRole &&
-                  (!customRole.trim() ||
-                    customRole.trim().length < 2 ||
-                    customRole.trim().length > 50))
-              }
+              disabled={loading}
               sx={{
                 py: 1.5,
                 fontSize: "1.1rem",
