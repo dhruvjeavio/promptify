@@ -102,7 +102,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
     <Container
       maxWidth="sm"
       sx={{
-        py: 8,
+        py: { xs: 4, sm: 8 },
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
@@ -122,7 +122,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
         <Paper
           elevation={3}
           sx={{
-            p: 6,
+            p: { xs: 3, sm: 6 },
             width: "100%",
             maxWidth: 500,
             borderRadius: 3,
@@ -132,11 +132,19 @@ const LoginPage: React.FC<LoginPageProps> = ({
             <Typography
               variant="h3"
               gutterBottom
-              sx={{ fontWeight: 700, color: "primary.main" }}
+              sx={{
+                fontWeight: 700,
+                color: "primary.main",
+                fontSize: { xs: "1.75rem", sm: "3rem" },
+              }}
             >
               Welcome to Promptify
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+            >
               Sign in to access your prompt library
             </Typography>
           </Box>

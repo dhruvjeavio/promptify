@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  Grid,
   TextField,
   InputAdornment,
   Chip,
@@ -58,11 +57,6 @@ const MyLibraryPage: React.FC = () => {
     setPromptToDelete(null);
   };
 
-  // Get all unique tags from prompts
-  const allTags = Array.from(
-    new Set(prompts.flatMap((prompt) => prompt.tags))
-  ).sort();
-
   // Filter and sort prompts
   const filteredPrompts = prompts
     .filter((prompt) => {
@@ -112,13 +106,19 @@ const MyLibraryPage: React.FC = () => {
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
           mb: 4,
+          gap: { xs: 2, sm: 0 },
         }}
       >
         <Box>
-          <Typography variant="h4" gutterBottom>
+          <Typography
+            variant="h4"
+            gutterBottom
+            sx={{ fontSize: { xs: "1.75rem", sm: "2.125rem" } }}
+          >
             My Library
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -130,7 +130,10 @@ const MyLibraryPage: React.FC = () => {
           variant="contained"
           startIcon={<Add />}
           onClick={() => navigate("/builder")}
-          sx={{ minWidth: 140 }}
+          sx={{
+            minWidth: { xs: "100%", sm: 140 },
+            alignSelf: { xs: "stretch", sm: "flex-start" },
+          }}
         >
           Create Prompt
         </Button>
@@ -138,8 +141,15 @@ const MyLibraryPage: React.FC = () => {
 
       {/* Search and Sort Controls */}
       <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={8}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 2,
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <TextField
               fullWidth
               placeholder="Search your prompts..."
@@ -153,9 +163,9 @@ const MyLibraryPage: React.FC = () => {
                 ),
               }}
             />
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={4}>
+          <Box sx={{ minWidth: { xs: "100%", md: "250px" } }}>
             <FormControl fullWidth>
               <InputLabel>Sort by</InputLabel>
               <Select
@@ -169,8 +179,8 @@ const MyLibraryPage: React.FC = () => {
                 <MenuItem value="upvotes">Most Upvoted</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
 
       {/* Active Filters */}
@@ -225,63 +235,71 @@ const MyLibraryPage: React.FC = () => {
           )}
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            },
+            gap: 3,
+          }}
+        >
           {filteredPrompts.map((prompt) => (
-            <Grid item xs={12} sm={6} md={4} key={prompt.id}>
-              <Box sx={{ position: "relative" }}>
-                <PromptCard
-                  prompt={prompt}
-                  onUpvote={() => {}} // No upvoting for own prompts
-                  showUpvote={false}
-                />
+            <Box key={prompt.id} sx={{ position: "relative" }}>
+              <PromptCard
+                prompt={prompt}
+                onUpvote={() => {}} // No upvoting for own prompts
+                showUpvote={false}
+              />
 
-                {/* Action buttons overlay */}
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    display: "flex",
-                    gap: 0.5,
-                    opacity: 0,
-                    transition: "opacity 0.2s",
-                    "&:hover": {
-                      opacity: 1,
-                    },
-                  }}
-                >
-                  <Tooltip title="Edit prompt">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/prompts/${prompt.id}`);
-                      }}
-                      sx={{ bgcolor: "background.paper" }}
-                    >
-                      <Edit />
-                    </IconButton>
-                  </Tooltip>
+              {/* Action buttons overlay */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  display: "flex",
+                  gap: 0.5,
+                  opacity: 0,
+                  transition: "opacity 0.2s",
+                  "&:hover": {
+                    opacity: 1,
+                  },
+                }}
+              >
+                <Tooltip title="Edit prompt">
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/prompts/${prompt.id}`);
+                    }}
+                    sx={{ bgcolor: "background.paper" }}
+                  >
+                    <Edit />
+                  </IconButton>
+                </Tooltip>
 
-                  <Tooltip title="Delete prompt">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(prompt.id);
-                      }}
-                      sx={{ bgcolor: "background.paper" }}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                <Tooltip title="Delete prompt">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(prompt.id);
+                    }}
+                    sx={{ bgcolor: "background.paper" }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Tooltip>
               </Box>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       )}
 
       {/* Delete Confirmation Modal */}

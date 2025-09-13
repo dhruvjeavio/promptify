@@ -18,6 +18,8 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   ContentCopy,
@@ -43,6 +45,8 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
   const [promptText, setPromptText] = useState(prompt.promptText);
   const [refinement, setRefinement] = useState<PromptRefinement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [analyzePrompt, { isLoading: isRunning }] = useAnalyzePromptMutation();
 
@@ -132,11 +136,11 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
-          gap: 3,
+          gap: { xs: 2, sm: 3 },
         }}
       >
         {/* Prompt Input */}
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
           <Box
             sx={{
               display: "flex",
@@ -156,7 +160,7 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
           <TextField
             fullWidth
             multiline
-            rows={12}
+            rows={isMobile ? 8 : 12}
             value={promptText}
             onChange={(e) => {
               setPromptText(e.target.value);
@@ -168,14 +172,14 @@ const PromptRunner: React.FC<PromptRunnerProps> = ({
             sx={{
               "& .MuiInputBase-root": {
                 fontFamily: "monospace",
-                fontSize: "0.9rem",
+                fontSize: { xs: "0.8rem", sm: "0.9rem" },
               },
             }}
           />
         </Paper>
 
         {/* Analysis Results */}
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
           <Box
             sx={{
               display: "flex",

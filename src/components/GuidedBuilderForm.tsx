@@ -17,6 +17,8 @@ import {
   TextField,
   Autocomplete,
   Slider,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -124,6 +126,8 @@ const GuidedBuilderForm: React.FC<GuidedBuilderFormProps> = ({
   const [activeStep, setActiveStep] = React.useState(0);
   const [tags, setTags] = React.useState<string[]>([]);
   const [isPublic, setIsPublic] = React.useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const {
     control,
@@ -534,19 +538,49 @@ const GuidedBuilderForm: React.FC<GuidedBuilderFormProps> = ({
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto" }}>
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+    <Box sx={{ maxWidth: 800, mx: "auto", px: { xs: 2, sm: 0 } }}>
+      <Stepper
+        activeStep={activeStep}
+        sx={{
+          mb: 4,
+          "& .MuiStepLabel-label": {
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          },
+        }}
+        orientation="horizontal"
+      >
         {steps.map((label) => (
           <Step key={label}>
-            <StepLabel>{label}</StepLabel>
+            <StepLabel
+              sx={{
+                "& .MuiStepLabel-label": {
+                  display: { xs: "none", sm: "block" },
+                },
+              }}
+            >
+              {label}
+            </StepLabel>
           </Step>
         ))}
       </Stepper>
 
-      <Paper sx={{ p: 3, mb: 3 }}>{getStepContent(activeStep)}</Paper>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+        {getStepContent(activeStep)}
+      </Paper>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Button disabled={activeStep === 0} onClick={handleBack}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          flexDirection: { xs: "column-reverse", sm: "row" },
+          gap: { xs: 2, sm: 0 },
+        }}
+      >
+        <Button
+          disabled={activeStep === 0}
+          onClick={handleBack}
+          fullWidth={isMobile}
+        >
           Back
         </Button>
 
@@ -555,11 +589,12 @@ const GuidedBuilderForm: React.FC<GuidedBuilderFormProps> = ({
             variant="contained"
             onClick={handleSubmit(onFormSubmit)}
             disabled={loading}
+            fullWidth={isMobile}
           >
             {loading ? "Creating..." : "Create Prompt"}
           </Button>
         ) : (
-          <Button variant="contained" onClick={handleNext}>
+          <Button variant="contained" onClick={handleNext} fullWidth={isMobile}>
             Next
           </Button>
         )}

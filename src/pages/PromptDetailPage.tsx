@@ -5,7 +5,6 @@ import {
   Container,
   Paper,
   Chip,
-  Divider,
   Alert,
   Button,
   IconButton,
@@ -20,7 +19,6 @@ import {
   Edit,
   Share,
   Person,
-  Visibility,
   VisibilityOff,
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
@@ -143,17 +141,34 @@ const PromptDetailPage: React.FC = () => {
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: { xs: "stretch", sm: "flex-start" },
             mb: 2,
+            gap: 2,
           }}
         >
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" gutterBottom>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="h4"
+              gutterBottom
+              sx={{
+                wordBreak: "break-word",
+                fontSize: { xs: "1.75rem", sm: "2.125rem" },
+              }}
+            >
               {prompt.title}
             </Typography>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: { xs: 1, sm: 2 },
+                mb: 2,
+              }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Person fontSize="small" color="action" />
                 <Typography variant="body2" color="text.secondary">
@@ -178,7 +193,13 @@ const PromptDetailPage: React.FC = () => {
             </Box>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              alignSelf: { xs: "flex-end", sm: "flex-start" },
+            }}
+          >
             <Tooltip title="Share prompt">
               <IconButton onClick={handleShare}>
                 <Share />
