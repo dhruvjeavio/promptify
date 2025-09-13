@@ -57,8 +57,8 @@ A modern, team-focused AI prompt management platform built with React, TypeScrip
 4. **Update environment variables in `.env`**:
 
    ```env
-   VITE_API_BASE_URL=http://172.23.17.86:8000
-   VITE_API_KEY=admin
+   VITE_API_BASE_URL=<YOUR BACKEND URL>
+   VITE_API_KEY=<YOUR BACKEND API KEY>
    ```
 
 5. **Start the development server**
