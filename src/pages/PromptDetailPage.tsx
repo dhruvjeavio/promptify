@@ -29,12 +29,14 @@ import {
 } from "../services/apiSlice";
 import PromptRunner from "../components/PromptRunner";
 import Loader from "../components/Loader";
+import SharePrompt from "../components/SharePrompt";
 
 const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const { data: prompt, error, isLoading } = useGetPromptByIdQuery(id!);
 
@@ -83,21 +85,8 @@ const PromptDetailPage: React.FC = () => {
     setEditedPrompt(updatedPrompt);
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: prompt?.title,
-          text: prompt?.promptText,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error("Error sharing:", error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-    }
+  const handleShare = () => {
+    setShareDialogOpen(true);
   };
 
   if (isLoading) {
@@ -262,6 +251,15 @@ const PromptDetailPage: React.FC = () => {
           Back to Dashboard
         </Button>
       </Box>
+
+      {/* Share Dialog */}
+      {prompt && (
+        <SharePrompt
+          prompt={prompt}
+          open={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+        />
+      )}
     </Container>
   );
 };

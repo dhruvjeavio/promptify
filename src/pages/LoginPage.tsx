@@ -14,7 +14,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import type { LoginFormData } from "../types/index";
-import { ROLES } from "../constants/constants";
+import { useGetRolesQuery } from "../services/apiSlice";
 
 const schema = yup.object({
   email: yup
@@ -51,6 +51,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const [showCustomRole, setShowCustomRole] = React.useState(false);
   const [customRole, setCustomRole] = React.useState("");
+  const { data: roles = [], isLoading: rolesLoading } = useGetRolesQuery();
 
   const {
     control,
@@ -209,9 +210,10 @@ const LoginPage: React.FC<LoginPageProps> = ({
               render={({ field: { onChange, value, ...field } }) => (
                 <Autocomplete
                   {...field}
-                  options={ROLES}
+                  options={roles}
                   value={value || ""}
                   onChange={(_, newValue) => onChange(newValue || "")}
+                  loading={rolesLoading}
                   renderInput={(params) => (
                     <TextField
                       {...params}

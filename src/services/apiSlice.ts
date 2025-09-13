@@ -1,10 +1,16 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import type { BaseQueryFn } from "@reduxjs/toolkit/query/react";
 import type {
   Prompt,
   CreatePromptRequest,
   UpdatePromptRequest,
   PromptRefinement,
 } from "../types/index";
+
+// Environment variables
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://172.23.17.86:8000";
+const API_KEY = import.meta.env.VITE_API_KEY || "admin";
 
 // Mock data for development
 const mockPrompts: Prompt[] = [
@@ -85,12 +91,118 @@ const mockPrompts: Prompt[] = [
   },
 ];
 
-// Custom base query for mock data
+// Mock template data for sharing prompts
+export const SHARING_PROMPT_TEMPLATES = [
+  {
+    id: "social-media-share",
+    title: "Social Media Content Creator",
+    description: "Create engaging social media posts to share your content",
+    template: {
+      goal: "Create engaging social media posts to share my [content type] and drive traffic to my [website/platform]",
+      targetAudience: "Social media users interested in [your niche/topic]",
+      context:
+        "I want to promote my [specific content] and increase visibility",
+      outputFormat: "Social media post with hashtags",
+      tone: "Engaging and authentic",
+      creativity: "High",
+      specificity: "Platform-specific (Twitter, LinkedIn, Instagram, etc.)",
+    },
+  },
+  {
+    id: "link-promotion",
+    title: "Link Promotion Specialist",
+    description: "Generate compelling content to promote public links",
+    template: {
+      goal: "Create compelling promotional content for my public link to increase clicks and engagement",
+      targetAudience: "Online community members and potential users",
+      context:
+        "I have a valuable resource/tool that I want to share with others",
+      outputFormat: "Promotional text with call-to-action",
+      tone: "Professional yet approachable",
+      creativity: "Medium",
+      specificity: "Clear value proposition",
+    },
+  },
+  {
+    id: "viral-content",
+    title: "Viral Content Creator",
+    description: "Design content that has the potential to go viral",
+    template: {
+      goal: "Create viral-worthy content to maximize reach and engagement for my [content type]",
+      targetAudience: "General social media audience",
+      context:
+        "I want to create content that spreads organically and generates buzz",
+      outputFormat: "Viral content strategy with multiple formats",
+      tone: "Trendy and attention-grabbing",
+      creativity: "Very High",
+      specificity: "Platform-optimized for maximum reach",
+    },
+  },
+  {
+    id: "professional-sharing",
+    title: "Professional Network Sharing",
+    description:
+      "Create professional content for LinkedIn and business networks",
+    template: {
+      goal: "Create professional content to share my work and insights with my professional network",
+      targetAudience: "Professional colleagues and industry peers",
+      context:
+        "I want to establish thought leadership and share valuable insights",
+      outputFormat: "Professional post with industry insights",
+      tone: "Professional and authoritative",
+      creativity: "Medium",
+      specificity: "Industry-specific and data-driven",
+    },
+  },
+];
+
+// Mock roles data
+export const ROLES = [
+  "Product Manager",
+  "Project Manager",
+  "Scrum Master",
+  "Agile Coach",
+  "UX/UI Designer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "DevOps Engineer",
+  "Data Scientist",
+  "Machine Learning Engineer",
+  "AI Engineer",
+  "Cybersecurity Engineer",
+  "Network Engineer",
+  "System Administrator",
+  "Database Administrator",
+  "Software Engineer",
+  "QA Engineer",
+  "Technical Writer",
+  "Technical Support",
+  "IT Manager",
+  "IT Director",
+  "IT Consultant",
+  "IT Architect",
+  "IT Security Analyst",
+  "Other",
+];
+
+// Real API base query
+const realApiQuery = fetchBaseQuery({
+  baseUrl: API_BASE_URL,
+  timeout: 1000,
+  prepareHeaders: (headers) => {
+    headers.set("X-Authorization", API_KEY);
+    headers.set("Content-Type", "application/json");
+    return headers;
+  },
+});
+
+// Mock base query for fallback
 const mockBaseQuery = async (
   arg: string | { url: string; method?: string; body?: unknown }
 ) => {
   // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 300));
 
   const url = typeof arg === "string" ? arg : arg.url;
   const method = typeof arg === "string" ? "GET" : arg.method || "GET";
@@ -104,6 +216,10 @@ const mockBaseQuery = async (
       return { data: mockPrompts.filter((prompt) => prompt.isPublic) };
     } else if (url === "/prompts/user") {
       return { data: mockPrompts.filter((prompt) => !prompt.isPublic) };
+    } else if (url === "/templates/sharing") {
+      return { data: SHARING_PROMPT_TEMPLATES };
+    } else if (url === "/roles") {
+      return { data: ROLES };
     } else if (
       url.startsWith("/prompts/") &&
       url !== "/prompts/public" &&
@@ -203,9 +319,29 @@ const mockBaseQuery = async (
   return { data: null };
 };
 
+// Fallback base query that uses mock data when API fails
+const baseQuery: BaseQueryFn = async (args, api, extraOptions) => {
+  try {
+    // Try the real API first
+    const result = await realApiQuery(args, api, extraOptions);
+
+    // If the API call was successful, return the result
+    if (result.data) {
+      return result;
+    }
+
+    // If there's an error, fall back to mock data
+    return await mockBaseQuery(args);
+  } catch (error) {
+    // If there's a network error or other exception, fall back to mock data
+    console.warn("API call failed, falling back to mock data:", error);
+    return await mockBaseQuery(args);
+  }
+};
+
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: mockBaseQuery,
+  baseQuery: baseQuery,
   tagTypes: ["Prompt"],
   endpoints: (builder) => ({
     // Get all prompts
@@ -278,6 +414,20 @@ export const apiSlice = createApi({
         body,
       }),
     }),
+
+    // Get sharing prompt templates
+    getSharingTemplates: builder.query<typeof SHARING_PROMPT_TEMPLATES, void>({
+      query: () => "/templates/sharing",
+      // Mock implementation
+      transformResponse: () => SHARING_PROMPT_TEMPLATES,
+    }),
+
+    // Get available roles
+    getRoles: builder.query<typeof ROLES, void>({
+      query: () => "/roles",
+      // Mock implementation
+      transformResponse: () => ROLES,
+    }),
   }),
 });
 
@@ -291,4 +441,6 @@ export const {
   useDeletePromptMutation,
   useUpvotePromptMutation,
   useAnalyzePromptMutation,
+  useGetSharingTemplatesQuery,
+  useGetRolesQuery,
 } = apiSlice;

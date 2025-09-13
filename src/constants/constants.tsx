@@ -1,28 +1,4 @@
-export const ROLES = [
-  "Product Manager",
-  "Project Manager",
-  "Scrum Master",
-  "Agile Coach",
-  "UX/UI Designer",
-  "Frontend Developer",
-  "Backend Developer",
-  "Full Stack Developer",
-  "DevOps Engineer",
-  "Data Scientist",
-  "Machine Learning Engineer",
-  "AI Engineer",
-  "Cybersecurity Engineer",
-  "Network Engineer",
-  "System Administrator",
-  "Database Administrator",
-  "Software Engineer",
-  "QA Engineer",
-  "Technical Writer",
-  "Technical Support",
-  "IT Manager",
-  "IT Director",
-  "IT Consultant",
-  "IT Architect",
-  "IT Security Analyst",
-  "Other",
-];
+// Note: ROLES and SHARING_PROMPT_TEMPLATES have been moved to apiSlice.ts
+// for centralized API mocking. Use the corresponding hooks:
+// - useGetRolesQuery() for roles
+// - useGetSharingTemplatesQuery() for sharing templates

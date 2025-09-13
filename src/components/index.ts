@@ -8,3 +8,5 @@ export { default as Footer } from "./Footer";
 export { default as PromptCard } from "./PromptCard";
 export { default as GuidedBuilderForm } from "./GuidedBuilderForm";
 export { default as PromptRunner } from "./PromptRunner";
+export { default as SharePrompt } from "./SharePrompt";
+export { default as SharingPromptTemplates } from "./SharingPromptTemplates";

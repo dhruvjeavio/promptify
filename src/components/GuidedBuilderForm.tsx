@@ -117,11 +117,13 @@ const commonTags = [
 interface GuidedBuilderFormProps {
   onSubmit: (data: PromptFormData & { tags: string[] }) => void;
   loading?: boolean;
+  initialData?: PromptFormData | null;
 }
 
 const GuidedBuilderForm: React.FC<GuidedBuilderFormProps> = ({
   onSubmit,
   loading = false,
+  initialData = null,
 }) => {
   const [activeStep, setActiveStep] = React.useState(0);
   const [tags, setTags] = React.useState<string[]>([]);
@@ -135,20 +137,28 @@ const GuidedBuilderForm: React.FC<GuidedBuilderFormProps> = ({
     formState: { errors },
     trigger,
     watch,
+    reset,
   } = useForm<PromptFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      goal: "",
-      targetAudience: "",
-      context: "",
-      outputFormat: "",
-      temperature: 0.7,
-      tone: "Professional",
-      maxLength: 500,
-      creativity: "Balanced",
-      specificity: "Specific",
+      goal: initialData?.goal || "",
+      targetAudience: initialData?.targetAudience || "",
+      context: initialData?.context || "",
+      outputFormat: initialData?.outputFormat || "",
+      temperature: initialData?.temperature || 0.7,
+      tone: initialData?.tone || "Professional",
+      maxLength: initialData?.maxLength || 500,
+      creativity: initialData?.creativity || "Balanced",
+      specificity: initialData?.specificity || "Specific",
     },
   });
+
+  // Reset form when initialData changes
+  React.useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   // const watchedValues = watch(); // Unused for now
 
